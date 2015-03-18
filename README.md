@@ -3,6 +3,7 @@ EvohomeTemperature
 
 Log Evohome temperature using Plotly
 
+<<<<<<< Updated upstream
 
 Requirements
 -------------
@@ -17,3 +18,6 @@ Installation
 -   Go on the website to settings->api settings
 -   There you find your api key en stream ids (you can easily generate them there)
 - Then just run the Python script. It will update the temperature every 5 minutes.
+=======
+Installation
+>>>>>>> Stashed changes

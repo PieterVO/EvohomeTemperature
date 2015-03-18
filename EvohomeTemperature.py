@@ -43,7 +43,7 @@ sessionId = userinfo['sessionId']
 url = 'https://rs.alarmnet.com/TotalConnectComfort/WebAPI/api/locations?userId=%s&allData=True' % userid
 headers['sessionId'] = sessionId
 response = requests.get(url,data=json.dumps(postdata),headers =headers)
-fullData = json.loads(response.content)[0]
+fullData = json.loads(response.content.decode('utf-8'))[0]
 
 # We make a plot for every room
 i=0
@@ -75,7 +75,7 @@ while True:
     url = 'https://rs.alarmnet.com/TotalConnectComfort/WebAPI/api/locations?userId=%s&allData=True' % userid
     headers['sessionId'] = sessionId
     response = requests.get(url,data=json.dumps(postdata),headers =headers)
-    fullData = json.loads(response.content)[0]
+    fullData = json.loads(response.content.decode('utf-8'))[0]
 
 # Get current time and then send all thermostat readings to plotly
     from datetime import datetime
