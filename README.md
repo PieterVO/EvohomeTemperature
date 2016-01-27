@@ -3,6 +3,8 @@ EvohomeTemperature
 
 Log Evohome temperature using Plotly
 
+Alternative with own webserver and MySQL database: https://github.com/PieterVO/EvohomeTemperatureSite
+
 
 Requirements
 -------------
