@@ -8,46 +8,42 @@ import time
 import plotly
 import plotly.plotly as py
 import plotly.tools as tls
+import ConfigParser
 from plotly.graph_objs import *
+from evohomeclient2 import EvohomeClient
+
+#config
+Config = ConfigParser.ConfigParser()
+Config.read("config.ini")
+Username = Config.get('Plotly', 'Username')
+APIkey = Config.get('Plotly', 'APIkey')
 
 # Sign in
-py.sign_in("Username", "APIkey")
+py.sign_in(Username, APIkey)
+
+stream_ids_array = []
+for name, value in Config.items('Rooms'):
+    stream_ids_array.append(value)
 
 # Stream tokens from plotly
-tls.set_credentials_file(stream_ids=[
-    "token1",
-    "token2",
-    "token3",
-    "token4",
-    "token5",
-    "token6",
-])
+tls.set_credentials_file(stream_ids=stream_ids_array)
 stream_ids = tls.get_credentials_file()['stream_ids']
 
 # Set your login details in the 2 fields below
-USERNAME = 'Your Evohome connected username'
-PASSWORD = 'Your Evohome password'
+USERNAME = Config.get('Evohome', 'Username')
+PASSWORD = Config.get('Evohome', 'Password')
 
-# Initial JSON POST to the website to return your userdata
-url = 'https://rs.alarmnet.com/TotalConnectComfort/WebAPI/api/Session'
-postdata = {'Username':USERNAME, 'Password':PASSWORD,'ApplicationId':'91db1612-73fd-4500-91b2-e63b069b185c'}
-headers = {'content-type':'application/json'}
-response = requests.post(url,data=json.dumps(postdata),headers =headers)
-userinfo = json.loads(response.content)
-
-# Extract the sessionId and your userid from the response
-userid = userinfo['userInfo']['userID']
-sessionId = userinfo['sessionId']
-
-# Next, using your userid, get all the data back about your site
-url = 'https://rs.alarmnet.com/TotalConnectComfort/WebAPI/api/locations?userId=%s&allData=True' % userid
-headers['sessionId'] = sessionId
-response = requests.get(url,data=json.dumps(postdata),headers =headers)
-fullData = json.loads(response.content.decode('utf-8'))[0]
+try:
+    client = EvohomeClient(USERNAME, PASSWORD)
+except ValueError:
+    try:
+        client = EvohomeClient(USERNAME, PASSWORD)
+    except ValueError:
+        print "Error when connecting to internet, please try again"
 
 # We make a plot for every room
 i=0
-for device in fullData['devices']:
+for device in client.temperatures():
     stream_id = stream_ids[i]
     i=i+1
     stream = Stream(
@@ -71,22 +67,26 @@ for device in fullData['devices']:
 
 # Infinite loop every 5 minutes, send temperatures to plotly
 while True:
-    # Next, using your userid, get all the data back about your site
-    url = 'https://rs.alarmnet.com/TotalConnectComfort/WebAPI/api/locations?userId=%s&allData=True' % userid
-    headers['sessionId'] = sessionId
-    response = requests.get(url,data=json.dumps(postdata),headers =headers)
-    fullData = json.loads(response.content.decode('utf-8'))[0]
 
 # Get current time and then send all thermostat readings to plotly
-    from datetime import datetime
-    j=0
-    for device in fullData['devices']:
-        stream_id = stream_ids[j]
-        j+=1
-        s = py.Stream(stream_id)
-        s.open()
-        tijd = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
-        temperatuur = device['thermostat']['indoorTemperature']
-        s.write(dict(x=tijd ,y=temperatuur))
-        s.close()
-    time.sleep(300)
+    try:
+        client = EvohomeClient(USERNAME, PASSWORD)
+        from datetime import datetime
+        j=0
+        for device in client.temperatures():
+            stream_id = Config.get('Rooms', device['name'])
+            j+=1
+            s = py.Stream(stream_id)
+            s.open()
+            tijd = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+            temperatuur = float(device['temp'])
+            print tijd + " : " + device['name'] + " " + str(temperatuur)
+            s.write(dict(x=tijd ,y=temperatuur))
+            s.close()
+        print "Going to sleep for 5 minutes"
+        time.sleep(300)
+    except Exception, e:
+        print "An error occured! Trying again in 15 seconds"
+        print str(e)
+        time.sleep(15)
+    
