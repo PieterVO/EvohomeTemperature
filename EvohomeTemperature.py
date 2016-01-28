@@ -42,10 +42,8 @@ except ValueError:
         print "Error when connecting to internet, please try again"
 
 # We make a plot for every room
-i=0
 for device in client.temperatures():
-    stream_id = stream_ids[i]
-    i=i+1
+    stream_id = Config.get('Rooms', device['name'])
     stream = Stream(
         token=stream_id,
         maxpoints=288
